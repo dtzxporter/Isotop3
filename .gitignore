@@ -328,3 +328,34 @@ ASALocalRun/
 
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
+
+*.user
+*.suo
+*.sdf
+*.ipch
+*.log
+*.opensdf
+*.nvuser
+*.opendb
+*.db
+*.tlog
+
+!components/asset_util/asset_util.vcxproj.filters
+
+/build
+/ipch
+/.vs
+/tmp
+
+/Debug
+/Release
+/Production
+
+components/*/Debug
+components/*/Release
+components/*/Production
+components/shared/*/Debug
+components/shared/*/Release
+components/shared/*/Production
+
+!*.lib
