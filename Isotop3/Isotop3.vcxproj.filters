@@ -28,5 +28,13 @@
     <ClInclude Include="Detours.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="crypto_keys_293081.json">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="crypto_keys_292198.json">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
