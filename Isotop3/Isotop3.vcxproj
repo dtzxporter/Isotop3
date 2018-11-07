@@ -78,10 +78,14 @@
   <ItemGroup>
     <ClInclude Include="Detours.h" />
     <ClInclude Include="crypto_keys_293081.json" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="crypto_keys_292198.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Isotop3.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
