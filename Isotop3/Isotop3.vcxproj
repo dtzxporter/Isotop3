@@ -44,13 +44,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>winhttp</TargetName>
-    <IncludePath>E:\Projects\Skyrim\Isotop3\Isotop3\openssl\include;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\Projects\Skyrim\Isotop3\Isotop3\openssl\x64\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)openssl\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)openssl\x64\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetName>winhttp</TargetName>
-    <IncludePath>E:\Projects\Skyrim\Isotop3\Isotop3\openssl\include;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\Projects\Skyrim\Isotop3\Isotop3\openssl\x64\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)openssl\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)openssl\x64\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
