@@ -337,8 +337,8 @@ bool hk___scrt_initialize_crt(void *a1, void *a2)
 	fopen_s(&g_OutFile, "C:\\out.txt", "w");
 	fopen_s(&g_CurlOutFile, "C:\\curl_out.txt", "w");
 
-	setbuf(g_OutFile, nullptr);
-	setbuf(g_CurlOutFile, nullptr);
+	setvbuf(g_OutFile, nullptr, _IONBF, 0);
+	setvbuf(g_CurlOutFile, nullptr, _IONBF, 0);
 
 	//DumpScriptCommandList();
 	//exit(0);
