@@ -3,6 +3,8 @@
 #include <mutex>
 #include "util.h"
 
+#pragma comment(lib, "ws2_32.lib")
+
 uintptr_t g_ModuleBase;
 FILE *g_OutFile;
 FILE *g_CurlOutFile;
@@ -65,6 +67,20 @@ __int64 hk_sub_142B1AEE0(void *a1, void *a2, const char *Filename, int line, int
 
 	memset(TLS_LargeBuffer, 0, sizeof(TLS_LargeBuffer));
 	return (__int64)&bd;
+}
+
+void hk_sub_142B1B870(__int64 a1)
+{
+	__try
+	{
+		sprintf_s(TLS_LargeBuffer, "%s: %s", *(const char **)(a1 + 0x10), *(const char **)(a1 + 0x20));
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		memset(TLS_LargeBuffer, 0, sizeof(TLS_LargeBuffer));
+	}
+
+	hk_sub_142B1ACE0(0);
 }
 
 typedef void CURL;
@@ -163,6 +179,51 @@ int hk_curl_easy_setopt(void *curl, int option, void *data)
 		//hk_curl_easy_setopt(curl, 10037, (void *)fout);		// CURLOPT_STDERR
 		hk_curl_easy_setopt(curl, 41, (void *)1);				// CURLOPT_VERBOSE
 		hk_curl_easy_setopt(curl, 20094, (void *)&CurlTrace);	// CURLOPT_DEBUGFUNCTION
+
+		if (strstr(url, "/bps/pub/ticket"))
+		{
+			data = (void *)"http://localhost/bps/pub/ticket";
+		}
+
+		if (strstr(url, "/bps/pub/v2/login"))
+		{
+			data = (void *)"http://localhost/bps/pub/v2/login";
+		}
+
+		if (strstr(url, "/bps/pub/v2/lobby/reconnect"))
+		{
+			data = (void *)"http://localhost/bps/pub/v2/lobby/reconnect";
+		}
+
+		if (strstr(url, "/bps/pub/bi/session/create"))
+		{
+			data = (void *)"http://localhost/bps/pub/bi/session/create";
+		}
+
+		if (strstr(url, "/bps/pub/lobby"))
+		{
+			data = (void *)"http://localhost/bps/pub/lobby";
+		}
+
+		if (strstr(url, "/bps/pub/matchmake/request"))
+		{
+			data = (void *)"http://localhost/bps/pub/matchmake/request";
+		}
+
+		if (strstr(url, "/bps/pub/bi/session/event/bulk"))
+		{
+			data = (void *)"http://localhost/bps/pub/bi/session/event/bulk";
+		}
+
+		if (strstr(url, "/bps/pub/character/list"))
+		{
+			data = (void *)"http://localhost/bps/pub/character/list";
+		}
+
+		if (strstr(url, "/bps/pub/matchmake/find"))
+		{
+			data = (void *)"http://localhost/bps/pub/matchmake/find";
+		}
 	}
 
 	// CURLOPT_SSL_VERIFYPEER
@@ -173,7 +234,7 @@ int hk_curl_easy_setopt(void *curl, int option, void *data)
 	if (option == 81)
 		data = (void *)0;
 
-	return ((int(*)(void *, int, __int64))(g_ModuleBase + 0x18232D0))(curl, option, (__int64)&data);
+	return ((int(*)(void *, int, __int64))(g_ModuleBase + 0x18C0390))(curl, option, (__int64)&data);
 }
 
 void LogFunc1(const char *Format, ...)
@@ -200,11 +261,75 @@ void LogFunc4(void *a1, const char *Format, ...)
 	va_end(va);
 }
 
+int LogFunc5(__int64 a1, const char *Format, ...)
+{
+	va_list va;
+	va_start(va, Format);
+	vfprintf(g_OutFile, Format, va);
+	va_end(va);
+	return 0;
+}
+
 __int64(*oLogFunc7)(void *, const char *);
 __int64 LogFunc7(void *a1, const char *a2)
 {
 	fprintf(g_OutFile, "%s\n", a2);
 	return oLogFunc7(a1, a2);
+}
+
+void InitServerThreads();
+void CreateOpenSSLServer();
+
+void DumpScriptCommandList()
+{
+	struct ParamEntry
+	{
+		const char *Name;
+		void *Unknown;
+	};
+
+	struct CommandEntry
+	{
+		const char *LongName;
+		const char *ShortName;
+		int Id;
+		const char *Description;
+		uint8_t Unknown;
+		uint8_t Unknown2;
+		uint8_t ParamCount;
+		ParamEntry *Params;
+		void *UnknownFunc;
+		void *ParserFunc;
+		void *CommandFunc;
+		char _padding[8];
+	};
+
+	static_assert(sizeof(ParamEntry) == 0x10, "");
+	static_assert(sizeof(CommandEntry) == 0x50, "");
+
+	CommandEntry *entries = (CommandEntry *)(g_ModuleBase + 0x44D41A0);
+
+	FILE *f = fopen("C:\\commandlist.txt", "w");
+
+	for (int i = 0; i < 891; i++)
+	{
+		auto *e = &entries[i];
+
+		fprintf(f, "{ \"%s\", \"%s\", %d, \"%s\", %d, { ", e->LongName, e->ShortName, e->Id, e->Description, e->ParamCount);
+
+		if (e->Params)
+		{
+			for (int j = 0; j < e->ParamCount; j++)
+			{
+				fprintf(f, "\"%s\", ", e->Params[j].Name);
+			}
+		}
+
+		fprintf(f, "} }\n");
+	}
+
+	fflush(f);
+	fclose(f);
 }
 
 bool hk___scrt_initialize_crt(void *a1, void *a2)
@@ -215,33 +340,50 @@ bool hk___scrt_initialize_crt(void *a1, void *a2)
 	setbuf(g_OutFile, nullptr);
 	setbuf(g_CurlOutFile, nullptr);
 
-	WriteJump(g_ModuleBase + 0x1BD6590, (uintptr_t)&LogFunc1);
-	WriteJump(g_ModuleBase + 0x11490C0, (uintptr_t)&LogFunc1);
-	WriteJump(g_ModuleBase + 0x1BD6460, (uintptr_t)&LogFunc1);
-	WriteJump(g_ModuleBase + 0x2C4D6C0, (uintptr_t)&LogFunc2);
-	WriteJump(g_ModuleBase + 0x15C2CD0, (uintptr_t)&LogFunc4);
-	//*(PBYTE *)&oLogFunc7 = Detours::X64::DetourFunction((PBYTE)g_ModuleBase + 0x214010, (PBYTE)&LogFunc7);
+	//DumpScriptCommandList();
+	//exit(0);
 
-	WriteJump(g_ModuleBase + 0x1825630, (uintptr_t)&hk_curl_easy_setopt);
+	//std::thread t([]()
+	//{
+	//	CreateOpenSSLServer();
+	//});
+	//t.detach();
 
-	PatchMemory(g_ModuleBase + 0x2B11521, (PBYTE)"\x00", 1);// Force global log level to TRACE (0)
-	PatchMemory(g_ModuleBase + 0x2B1AED0, (PBYTE)"\xC3", 1);// Prevent it from being set to anything but 0
+	//InitServerThreads();
 
-	WriteJump(g_ModuleBase + 0x2B1B0A0, (uintptr_t)&hk_sub_142B1B0A0);
-	WriteJump(g_ModuleBase + 0x2B1ACE0, (uintptr_t)&hk_sub_142B1ACE0);
-	WriteJump(g_ModuleBase + 0x2B1AEE0, (uintptr_t)&hk_sub_142B1AEE0);
-	PatchMemory(g_ModuleBase + 0x2B1B870, (PBYTE)"\xC3", 1);// Crash related to custom hk_sub_142B1B0A0/hk_sub_142B1AEE0 (has more information)
+	WriteJump(g_ModuleBase + 0x1C73670, (uintptr_t)&LogFunc1);
+	WriteJump(g_ModuleBase + 0x11E5C70, (uintptr_t)&LogFunc1);
+	WriteJump(g_ModuleBase + 0x1C73540, (uintptr_t)&LogFunc1);
+	WriteJump(g_ModuleBase + 0x2CEBF80, (uintptr_t)&LogFunc2);
+	WriteJump(g_ModuleBase + 0x165EF20, (uintptr_t)&LogFunc4);
+	WriteJump(g_ModuleBase + 0x1D08FD0, (uintptr_t)&LogFunc5);
+	//*(PBYTE *)&oLogFunc7 = Detours::X64::DetourFunction((PBYTE)g_ModuleBase + 0x2A5170, (PBYTE)&LogFunc7);
 
-	PatchMemory(g_ModuleBase + 0xC94570, (PBYTE)"\x90\x90\x90\x90\x90\x90", 6);// Force main menu even if login fails
-	PatchMemory(g_ModuleBase + 0xCA330D, (PBYTE)"\x90\x90\x90\x90\x90\x90", 6);// Force main menu even if login fails
+	WriteJump(g_ModuleBase + 0x2BB9700, (uintptr_t)&hk_sub_142B1B0A0);
+	WriteJump(g_ModuleBase + 0x2BB9340, (uintptr_t)&hk_sub_142B1ACE0);
+	WriteJump(g_ModuleBase + 0x2BB9540, (uintptr_t)&hk_sub_142B1AEE0);
+	WriteJump(g_ModuleBase + 0x2BB9ED0, (uintptr_t)&hk_sub_142B1B870);
+
+	PatchMemory(g_ModuleBase + 0x2BAFB7A + 0x7, (PBYTE)"\x00", 1);// Force global log level to TRACE (0)
+	PatchMemory(g_ModuleBase + 0x2BB9530, (PBYTE)"\xC3", 1);// Prevent it from being set to anything but 0
+
+	// Force pushy to succeed every time even if it's not connected
+	//WriteJump(g_ModuleBase + 0x1E74070, g_ModuleBase + 0x1E73AE0);
 
 	// Force console commands to be logged (mostly useless, console is stripped)
 	//*(bool *)(*(uintptr_t *)(__readgsqword(0x58u) + 8i64 * (unsigned int)0) + 496i64) = true;
 
 	// Kill anticheat variable for process and dll names (x64dbg.exe, ida.exe)
-	PatchMemory(g_ModuleBase + 0x253200, (PBYTE)"\xC3", 1);
+	PatchMemory(g_ModuleBase + 0x02E4F00, (PBYTE)"\xC3", 1);
 
-	return ((decltype(&hk___scrt_initialize_crt))(g_ModuleBase + 0x2B2EAD8))(a1, a2);
+	// Hook CURL
+	//WriteJump(g_ModuleBase + 0x18C26F0, (uintptr_t)&hk_curl_easy_setopt);
+
+	const char *ptr = "http://localhost";
+	//PatchMemory(g_ModuleBase + 0x4520978, (PBYTE)&ptr, 8);
+	//PatchMemory(g_ModuleBase + 0x45209B8, (PBYTE)&ptr, 8);
+
+	return ((decltype(&hk___scrt_initialize_crt))(g_ModuleBase + 0x2BCD118))(a1, a2);
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
@@ -255,7 +397,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 		{
 			// Hijack the pre-CRT call that runs before all static constructors
 			g_ModuleBase = (uintptr_t)GetModuleHandle(nullptr);
-			WriteCall(g_ModuleBase + 0x2B2F70F, (uintptr_t)&hk___scrt_initialize_crt);
+			WriteCall(g_ModuleBase + 0x2BCDD4F, (uintptr_t)&hk___scrt_initialize_crt);
 		}
 	}
 
