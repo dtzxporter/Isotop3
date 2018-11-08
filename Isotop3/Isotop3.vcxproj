@@ -59,6 +59,9 @@
       <SDLCheck>false</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
+    <Link>
+      <AdditionalOptions>/ignore:4099 /ignore:4104 %(AdditionalOptions)</AdditionalOptions>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -72,6 +75,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalOptions>/ignore:4099 /ignore:4104 %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -85,6 +89,7 @@
     <ClInclude Include="Detours.h" />
     <ClInclude Include="crypto_keys_293081.json" />
     <ClInclude Include="httplib.h" />
+    <ClInclude Include="phook.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>

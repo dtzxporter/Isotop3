@@ -1,5 +1,6 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <sys/types.h>
 #include "util.h"
 
 #pragma comment(lib, "libssl.lib")
@@ -11,6 +12,8 @@ typedef struct
 	SSL *ssl;
 	BIO *bio;
 } DTLSParams;
+
+typedef int socklen_t;
 
 void DTLS_Error(const char *Format, ...)
 {
@@ -122,7 +125,11 @@ struct pass_info
 	} server_addr, client_addr;
 	SSL *ssl;
 };
-/*
+
+#define BUFFER_SIZE          (1<<16)
+typedef __int64 ssize_t;	// Signed size_t
+#define INET6_ADDRSTRLEN 46	// Probably right
+
 DWORD WINAPI connection_handle(LPVOID *info) {
 	ssize_t len;
 	char buf[BUFFER_SIZE];
@@ -134,8 +141,8 @@ DWORD WINAPI connection_handle(LPVOID *info) {
 	struct timeval timeout;
 	int num_timeouts = 0, max_timeouts = 5;
 
-	OPENSSL_assert(pinfo->client_addr.ss.ss_family == pinfo->server_addr.ss.ss_family);
-	fd = socket(pinfo->client_addr.ss.ss_family, SOCK_DGRAM, 0);
+	OPENSSL_assert(pinfo->client_addr.s4.sin_family == pinfo->server_addr.s4.sin_family);
+	fd = socket(pinfo->client_addr.s4.sin_family, SOCK_DGRAM, 0);
 	if (fd < 0) {
 		perror("socket");
 		goto cleanup;
@@ -147,7 +154,7 @@ DWORD WINAPI connection_handle(LPVOID *info) {
 
 	// Set new fd and set BIO to connected
 	BIO_set_fd(SSL_get_rbio(ssl), fd, BIO_NOCLOSE);
-	BIO_ctrl(SSL_get_rbio(ssl), BIO_CTRL_DGRAM_SET_CONNECTED, 0, &pinfo->client_addr.ss);
+	BIO_ctrl(SSL_get_rbio(ssl), BIO_CTRL_DGRAM_SET_CONNECTED, 0, &pinfo->client_addr.s4);
 
 	// Finish handshake
 	do { ret = SSL_accept(ssl); } while (ret == 0);
@@ -235,7 +242,7 @@ cleanup:
 	SSL_free(ssl);
 	ExitThread(0);
 }
-*/
+
 
 void CreateOpenSSLServer()
 {
@@ -259,7 +266,7 @@ void CreateOpenSSLServer()
 	}
 
 	FILE *f = fopen("C:\\sslerr.txt", "w");
-	setbuf(f, nullptr);
+	setvbuf(f, nullptr, _IONBF, 0);
 
 	//
 	// Socket initialization on port 3000
@@ -308,7 +315,7 @@ void CreateOpenSSLServer()
 		memcpy(&info->client_addr, &clientAddr, sizeof(clientAddr));
 		info->ssl = ssl;
 
-		//if (CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)connection_handle, info, 0, nullptr) == NULL)
+		if (CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)connection_handle, info, 0, nullptr) == NULL)
 		{
 			MessageBoxA(nullptr, "f2", "", 0);
 			exit(-1);

@@ -176,7 +176,7 @@ void InitHttpServer(const char *Name, int Port)
 	});
 
 	svr.Post("/cms/message", [=](const Request&, Response& res) {
-		res.set_content(R"----({"platform": {"message": "success", "code": 2000, "response": [{"lang": "en", "content": "{ \n\"pre-login\": \"\nTest 1 worked!\", \n\n\"main-menu\": \"\nTest 2 worked!\", \n} \n  \n", "product_id": 10, "title": "B.E.T.A. Offline", "uauthor": "Contentful", "ctime": "2018-08-21T18:47:01.722000+00:00", "message_id": 1, "platform_id": 0, "version": "95", "type_id": 1, "cauthor": "Contentful", "public": 1, "utime": "2018-10-31T03:08:02.255000+00:00"}]}})----", "application/json");
+		res.set_content(R"----({"platform": {"message": "success", "code": 2000, "response": [{"lang": "en", "content": "{ \n\"pre-login\": \"\nIsotop3 Mod A.L.P.H.A\", \n\n\"main-menu\": \"\nIsotop3 Mod A.L.P.H.A\", \n} \n  \n", "product_id": 10, "title": "B.E.T.A. Offline", "uauthor": "Contentful", "ctime": "2018-08-21T18:47:01.722000+00:00", "message_id": 1, "platform_id": 0, "version": "95", "type_id": 1, "cauthor": "Contentful", "public": 1, "utime": "2018-10-31T03:08:02.255000+00:00"}]}})----", "application/json");
 	});
 
 	svr.Post("/session/login", [=](const Request&, Response& res) {
@@ -243,6 +243,9 @@ void InitHttpServer(const char *Name, int Port)
 
 	// POST
 	svr.Post("/bps/pub/bi/session/event/bulk", [=](const Request&, Response& res) {
+		// Enable local networking
+		*(bool *)(*(uintptr_t *)((uintptr_t)GetModuleHandle(nullptr) + 0x6A65398) + 0x11) = 1;
+		*(bool *)(*(uintptr_t *)((uintptr_t)GetModuleHandle(nullptr) + 0x6A65398) + 0x400) = 1;
 		res.set_content(R"----({})----", "application/json");
 	});
 
@@ -266,7 +269,7 @@ void InitHttpServer(const char *Name, int Port)
 	});
 
 	fprintf(f, "[%s] Initialized on port %d\n", Name, Port);
-	svr.listen("localhost", Port);
+	svr.listen("127.0.0.1", Port);
 
 	fclose(f);
 }

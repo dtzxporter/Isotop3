@@ -2,10 +2,12 @@
 #include <stdio.h>
 #include <mutex>
 #include "util.h"
+#include "phook.h"
 
 #pragma comment(lib, "ws2_32.lib")
 
 uintptr_t g_ModuleBase;
+uintptr_t g_ModuleCodeSize;
 FILE *g_OutFile;
 FILE *g_CurlOutFile;
 
@@ -182,47 +184,47 @@ int hk_curl_easy_setopt(void *curl, int option, void *data)
 
 		if (strstr(url, "/bps/pub/ticket"))
 		{
-			data = (void *)"http://localhost/bps/pub/ticket";
+			data = (void *)"http://127.0.0.1/bps/pub/ticket";
 		}
 
 		if (strstr(url, "/bps/pub/v2/login"))
 		{
-			data = (void *)"http://localhost/bps/pub/v2/login";
+			data = (void *)"http://127.0.0.1/bps/pub/v2/login";
 		}
 
 		if (strstr(url, "/bps/pub/v2/lobby/reconnect"))
 		{
-			data = (void *)"http://localhost/bps/pub/v2/lobby/reconnect";
+			data = (void *)"http://127.0.0.1/bps/pub/v2/lobby/reconnect";
 		}
 
 		if (strstr(url, "/bps/pub/bi/session/create"))
 		{
-			data = (void *)"http://localhost/bps/pub/bi/session/create";
+			data = (void *)"http://127.0.0.1/bps/pub/bi/session/create";
 		}
 
 		if (strstr(url, "/bps/pub/lobby"))
 		{
-			data = (void *)"http://localhost/bps/pub/lobby";
+			data = (void *)"http://127.0.0.1/bps/pub/lobby";
 		}
 
 		if (strstr(url, "/bps/pub/matchmake/request"))
 		{
-			data = (void *)"http://localhost/bps/pub/matchmake/request";
+			data = (void *)"http://127.0.0.1/bps/pub/matchmake/request";
 		}
 
 		if (strstr(url, "/bps/pub/bi/session/event/bulk"))
 		{
-			data = (void *)"http://localhost/bps/pub/bi/session/event/bulk";
+			data = (void *)"http://127.0.0.1/bps/pub/bi/session/event/bulk";
 		}
 
 		if (strstr(url, "/bps/pub/character/list"))
 		{
-			data = (void *)"http://localhost/bps/pub/character/list";
+			data = (void *)"http://127.0.0.1/bps/pub/character/list";
 		}
 
 		if (strstr(url, "/bps/pub/matchmake/find"))
 		{
-			data = (void *)"http://localhost/bps/pub/matchmake/find";
+			data = (void *)"http://127.0.0.1/bps/pub/matchmake/find";
 		}
 	}
 
@@ -343,13 +345,13 @@ bool hk___scrt_initialize_crt(void *a1, void *a2)
 	//DumpScriptCommandList();
 	//exit(0);
 
-	//std::thread t([]()
-	//{
-	//	CreateOpenSSLServer();
-	//});
-	//t.detach();
+	/*std::thread t([]()
+	{
+		CreateOpenSSLServer();
+	});
+	t.detach();*/
 
-	//InitServerThreads();
+	InitServerThreads();
 
 	WriteJump(g_ModuleBase + 0x1C73670, (uintptr_t)&LogFunc1);
 	WriteJump(g_ModuleBase + 0x11E5C70, (uintptr_t)&LogFunc1);
@@ -368,7 +370,7 @@ bool hk___scrt_initialize_crt(void *a1, void *a2)
 	PatchMemory(g_ModuleBase + 0x2BB9530, (PBYTE)"\xC3", 1);// Prevent it from being set to anything but 0
 
 	// Force pushy to succeed every time even if it's not connected
-	//WriteJump(g_ModuleBase + 0x1E74070, g_ModuleBase + 0x1E73AE0);
+	WriteJump(g_ModuleBase + 0x1E74070, g_ModuleBase + 0x1E73AE0);
 
 	// Force console commands to be logged (mostly useless, console is stripped)
 	//*(bool *)(*(uintptr_t *)(__readgsqword(0x58u) + 8i64 * (unsigned int)0) + 496i64) = true;
@@ -377,11 +379,20 @@ bool hk___scrt_initialize_crt(void *a1, void *a2)
 	PatchMemory(g_ModuleBase + 0x02E4F00, (PBYTE)"\xC3", 1);
 
 	// Hook CURL
-	//WriteJump(g_ModuleBase + 0x18C26F0, (uintptr_t)&hk_curl_easy_setopt);
+	WriteJump(g_ModuleBase + 0x18C26F0, (uintptr_t)&hk_curl_easy_setopt);
 
-	const char *ptr = "http://localhost";
-	//PatchMemory(g_ModuleBase + 0x4520978, (PBYTE)&ptr, 8);
-	//PatchMemory(g_ModuleBase + 0x45209B8, (PBYTE)&ptr, 8);
+	// Hook to fix window mode and give the user more controls
+	DWORD dwStyle = WS_OVERLAPPEDWINDOW;
+	auto dwWindowStyleAddr = FindPattern("BD ? ? ? ? 39 79 ?", g_ModuleBase, g_ModuleCodeSize);
+	PatchMemory(g_ModuleBase + dwWindowStyleAddr + 0x1F, (PBYTE)&dwStyle, sizeof(DWORD));
+	// TODO: We need to set resolution on WM_SIZE and adjust the window bounds properly
+
+	// Patch API address
+	const char *ptr = "http://127.0.0.1";
+	PatchMemory(g_ModuleBase + 0x4520978, (PBYTE)&ptr, 8);
+	PatchMemory(g_ModuleBase + 0x45209B8, (PBYTE)&ptr, 8);
+
+	PatchMemory(g_ModuleBase + 0x2B9346C + 2, (PBYTE)"\x00", 1);
 
 	return ((decltype(&hk___scrt_initialize_crt))(g_ModuleBase + 0x2BCD118))(a1, a2);
 }
@@ -390,13 +401,17 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD fdwReason, LPVOID lpReserved)
 {
 	if (fdwReason == DLL_PROCESS_ATTACH)
 	{
-		char filePath[MAX_PATH];
-		GetModuleFileNameA(GetModuleHandle(nullptr), filePath, MAX_PATH);
+		auto GameModule = MainModule();
 
-		if (strstr(filePath, "Fallout76.exe"))
+		if (strstr(GameModule.GetModulePath().c_str(), "Fallout76.exe"))
 		{
+			g_ModuleBase = GameModule.GetBaseAddress();
+			g_ModuleCodeSize = GameModule.GetCodeSize();
+
+			AllocConsole();
+			freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);
+
 			// Hijack the pre-CRT call that runs before all static constructors
-			g_ModuleBase = (uintptr_t)GetModuleHandle(nullptr);
 			WriteCall(g_ModuleBase + 0x2BCDD4F, (uintptr_t)&hk___scrt_initialize_crt);
 		}
 	}
