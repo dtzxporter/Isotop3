@@ -392,7 +392,7 @@ bool hk___scrt_initialize_crt(void *a1, void *a2)
 	PatchMemory(g_ModuleBase + 0x4520978, (PBYTE)&ptr, 8);
 	PatchMemory(g_ModuleBase + 0x45209B8, (PBYTE)&ptr, 8);
 
-	PatchMemory(g_ModuleBase + 0x2B9346C + 2, (PBYTE)"\x00", 1);
+	//PatchMemory(g_ModuleBase + 0x2B9346C + 2, (PBYTE)"\x00", 1);
 
 	return ((decltype(&hk___scrt_initialize_crt))(g_ModuleBase + 0x2BCD118))(a1, a2);
 }
